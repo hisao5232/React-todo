@@ -6,28 +6,59 @@ function App() {
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [date, setDate] = useState("");
+  const [editIndex, setEditIndex] = useState(null); // 編集中のタスク
 
-  const addTask = (e) => {
+  // タスク追加または更新
+  const addOrUpdateTask = (e) => {
     e.preventDefault();
-    if (title.trim() === "") return;
-    const newTask = { title: title.trim(), detail: detail.trim(), date };
-    const newTasks = [...tasks, newTask];
+    if (!title.trim()) return;
 
-    // 日付順にソート（空は最後）
-    newTasks.sort((a, b) => {
-      if (!a.date) return 1;
-      if (!b.date) return -1;
-      return new Date(a.date) - new Date(b.date);
-    });
+    if (editIndex !== null) {
+      // 編集中 → 更新処理
+      const updatedTasks = [...tasks];
+      updatedTasks[editIndex] = { title: title.trim(), detail: detail.trim(), date };
+      updatedTasks.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
+      setTasks(updatedTasks);
+      setEditIndex(null);
+    } else {
+      // 新規追加
+      const newTask = { title: title.trim(), detail: detail.trim(), date };
+      const newTasks = [...tasks, newTask];
+      newTasks.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
+      setTasks(newTasks);
+    }
 
-    setTasks(newTasks);
+    // 入力欄をクリア
     setTitle("");
     setDetail("");
     setDate("");
   };
 
+  // 編集開始
+  const startEdit = (index) => {
+    setEditIndex(index);
+    setTitle(tasks[index].title);
+    setDetail(tasks[index].detail);
+    setDate(tasks[index].date);
+  };
+
+  // 削除
   const deleteTask = (index) => {
     setTasks(tasks.filter((_, i) => i !== index));
+    if (editIndex === index) {
+      setEditIndex(null);
+      setTitle("");
+      setDetail("");
+      setDate("");
+    }
   };
 
   return (
@@ -39,13 +70,12 @@ function App() {
 
       {/* メイン */}
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        {/* フォーム全体を中央に配置 */}
         <form
-          onSubmit={addTask}
-          className="flex flex-col w-80 bg-white p-6 rounded shadow-md"
+          onSubmit={addOrUpdateTask}
+          className="flex flex-col w-80 bg-white p-6 rounded shadow-md gap-4"
         >
-          <div className="mb-4">
-            <label className="block text-left mb-1 font-semibold">タイトル</label>
+          <div>
+            <label className="block mb-1 font-semibold">タイトル</label>
             <input
               type="text"
               value={title}
@@ -55,8 +85,8 @@ function App() {
             />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-left mb-1 font-semibold">詳細（任意）</label>
+          <div>
+            <label className="block mb-1 font-semibold">詳細（任意）</label>
             <textarea
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
@@ -66,8 +96,8 @@ function App() {
             />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-left mb-1 font-semibold">期限</label>
+          <div>
+            <label className="block mb-1 font-semibold">期限</label>
             <input
               type="date"
               value={date}
@@ -78,34 +108,37 @@ function App() {
 
           <button
             type="submit"
-            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 w-full"
+            className={`${
+              editIndex !== null ? "bg-green-500 hover:bg-green-600" : "bg-primary hover:bg-blue-600"
+            } text-white px-3 py-2 rounded w-full`}
           >
-            追加
+            {editIndex !== null ? "更新" : "追加"}
           </button>
         </form>
 
         {/* タスク表示 */}
         <ul className="text-left w-80 mt-6 space-y-2">
           {tasks.map((task, index) => (
-            <li
-              key={index}
-              className="border rounded px-2 py-2 bg-gray-50 shadow-sm"
-            >
+            <li key={index} className="border rounded px-2 py-2 bg-grayBg shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="font-bold">{task.title}</span>
-                <button
-                  onClick={() => deleteTask(index)}
-                  className="bg-red-500 text-white px-2 py-0.5 rounded hover:bg-red-600 text-sm"
-                >
-                  削除
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => startEdit(index)}
+                    className="bg-yellow-500 text-white px-2 py-0.5 rounded hover:bg-yellow-600 text-sm"
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => deleteTask(index)}
+                    className="bg-danger text-white px-2 py-0.5 rounded hover:bg-red-600 text-sm"
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
-              {task.detail && (
-                <p className="text-sm text-gray-600 mt-1">{task.detail}</p>
-              )}
-              {task.date && (
-                <p className="text-xs text-gray-400 mt-1">期限: {task.date}</p>
-              )}
+              {task.detail && <p className="text-sm text-gray-600 mt-1">{task.detail}</p>}
+              {task.date && <p className="text-xs text-gray-400 mt-1">期限: {task.date}</p>}
             </li>
           ))}
         </ul>
