@@ -1,0 +1,15 @@
+services:
+  todo-app:
+    build: .
+    container_name: todo-app
+    restart: unless-stopped
+    environment:
+      - VIRTUAL_HOST=todo.go-pro-world.net
+      - LETSENCRYPT_HOST=todo.go-pro-world.net
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+    networks:
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external: true
